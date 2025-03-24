@@ -16,12 +16,6 @@ struct LoginResponse: Codable {
     let error: String?
     let error_description: String?
     let error_uri: String?
-    
-    // User information from JWT token
-    let name: String?
-    let email: String?
-    let given_name: String?
-    let family_name: String?
     let preferred_username: String?
     
     var token: String? {
@@ -34,21 +28,5 @@ struct LoginResponse: Codable {
     
     var message: String {
         return error_description ?? error ?? "Login successful"
-    }
-    
-    var user: User? {
-        guard let name = name,
-              let email = email,
-              let givenName = given_name,
-              let familyName = family_name,
-              let preferredUsername = preferred_username else {
-            return nil
-        }
-        
-        return User(name: name,
-                   email: email,
-                   givenName: givenName,
-                   familyName: familyName,
-                   preferredUsername: preferredUsername)
     }
 } 

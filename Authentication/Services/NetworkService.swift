@@ -11,8 +11,29 @@ enum NetworkError: Error {
 class NetworkService {
     static let shared = NetworkService()
     private let baseURL = "https://bdev.hikigaidemo.com"
-    private var authToken: String?
-    private var refreshToken: String?
+    private let userDefaults = UserDefaults.standard
+    
+    private var authToken: String? {
+        get { userDefaults.string(forKey: "authToken") }
+        set { 
+            if let token = newValue {
+                userDefaults.setValue(token, forKey: "authToken")
+            } else {
+                userDefaults.removeObject(forKey: "authToken")
+            }
+        }
+    }
+    
+    private var refreshToken: String? {
+        get { userDefaults.string(forKey: "refreshToken") }
+        set {
+            if let token = newValue {
+                userDefaults.setValue(token, forKey: "refreshToken")
+            } else {
+                userDefaults.removeObject(forKey: "refreshToken")
+            }
+        }
+    }
     
     private init() {}
     
@@ -74,7 +95,7 @@ class NetworkService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.serverError("Invalid response")

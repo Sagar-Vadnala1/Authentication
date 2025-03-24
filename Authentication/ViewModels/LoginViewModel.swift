@@ -8,7 +8,18 @@ class LoginViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isAuthenticated = false
-    @Published var currentUser: User?
+    @Published var loggedInUsername: String = ""
+    
+    private let userDefaults = UserDefaults.standard
+    
+    init() {
+        // Check if user is already logged in
+        if let savedUsername = userDefaults.string(forKey: "loggedInUsername"),
+           let _ = userDefaults.string(forKey: "authToken") {
+            self.loggedInUsername = savedUsername
+            self.isAuthenticated = true
+        }
+    }
     
     func login() async {
         guard !username.isEmpty && !password.isEmpty else {
@@ -22,8 +33,13 @@ class LoginViewModel: ObservableObject {
         do {
             let response = try await NetworkService.shared.login(username: username, password: password)
             if response.success {
-                currentUser = response.user
+                loggedInUsername = response.preferred_username ?? username
                 isAuthenticated = true
+                
+                // Save authentication state
+                userDefaults.setValue(loggedInUsername, forKey: "loggedInUsername")
+                userDefaults.setValue(response.access_token, forKey: "authToken")
+                userDefaults.setValue(response.refresh_token, forKey: "refreshToken")
             } else {
                 errorMessage = response.message
             }
@@ -53,6 +69,11 @@ class LoginViewModel: ObservableObject {
         password = ""
         errorMessage = nil
         isAuthenticated = false
-        currentUser = nil
+        loggedInUsername = ""
+        
+        // Clear saved authentication state
+        userDefaults.removeObject(forKey: "loggedInUsername")
+        userDefaults.removeObject(forKey: "authToken")
+        userDefaults.removeObject(forKey: "refreshToken")
     }
 } 

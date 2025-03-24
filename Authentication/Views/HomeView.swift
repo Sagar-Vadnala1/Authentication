@@ -8,19 +8,16 @@ struct HomeView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                if let user = loginViewModel.currentUser {
-                    Text("Welcome, \(user.name)")
-                        .font(.largeTitle)
-                        .padding()
-                    
-                    Text(user.email)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                } else {
-                    Text("Welcome")
-                        .font(.largeTitle)
-                        .padding()
-                }
+                Image("CompanyLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 130, height: 130)
+                    .padding(.top, 40)
+                
+                Text("Welcome, \(loginViewModel.loggedInUsername)")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .padding()
                 
                 Spacer()
                 
@@ -42,7 +39,7 @@ struct HomeView: View {
                 }
                 .padding(.bottom, 20)
             }
-            .navigationBarTitle("Home", displayMode: .large)
+            .navigationBarTitle("Home", displayMode: .inline)
         }
     }
 }
