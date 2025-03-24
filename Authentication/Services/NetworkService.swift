@@ -91,11 +91,46 @@ class NetworkService {
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let token = authToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
+        // Create an empty string payload as required by the API
+        let payload = "\"\""
+        request.httpBody = payload.data(using: .utf8)
+        
         let (_, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.serverError("Invalid response")
+        }
+        
+        // Accept both 200 and 400 as successful logout
+        guard httpResponse.statusCode == 200 || httpResponse.statusCode == 400 else {
+            throw NetworkError.serverError("Server error: \(httpResponse.statusCode)")
+        }
+        
+        // Clear the stored tokens
+        self.authToken = nil
+        self.refreshToken = nil
+    }
+    
+    func getAthenaPatientReasons(_ request: AthenaPatientRequest) async throws -> AthenaPatientResponse {
+        guard let url = URL(string: "\(baseURL)/getAthenaPatientReasons") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = authToken {
+            urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        urlRequest.httpBody = try JSONEncoder().encode(request)
+        
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.serverError("Invalid response")
@@ -105,8 +140,10 @@ class NetworkService {
             throw NetworkError.serverError("Server error: \(httpResponse.statusCode)")
         }
         
-        // Clear the stored tokens
-        self.authToken = nil
-        self.refreshToken = nil
+        do {
+            return try JSONDecoder().decode(AthenaPatientResponse.self, from: data)
+        } catch {
+            throw NetworkError.decodingError(error)
+        }
     }
 } 
