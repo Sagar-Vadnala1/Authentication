@@ -2,18 +2,24 @@ import Foundation
 import SwiftUI
 import UserNotifications
 
-class NotificationSimulatorService: ObservableObject {
+class NotificationSimulatorService: NSObject, ObservableObject {
     private var timer: Timer?
     @Published var isSimulatorRunning = false
     private var notificationCount = 0
     
-    init() {
+    override init() {
+        super.init()
         startSendingNotifications()
+        setupNotificationCenterDelegate()
+    }
+    
+    private func setupNotificationCenterDelegate() {
+        UNUserNotificationCenter.current().delegate = self
     }
     
     private func startSendingNotifications() {
-        isSimulatorRunning = true
-        // Send first notification immediately
+//        isSimulatorRunning = true
+//        // Send first notification immediately
         sendNotification()
         
         // Then start the timer for subsequent notifications
@@ -28,7 +34,7 @@ class NotificationSimulatorService: ObservableObject {
         content.title = "New Update"
         content.body = "This is a test notification sent at \(Date().formatted())"
         content.sound = .default
-        content.badge = (notificationCount) as NSNumber
+        content.badge = NSNumber(value: notificationCount)
         
         // Add a trigger to show the notification immediately
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -55,5 +61,46 @@ class NotificationSimulatorService: ObservableObject {
     
     deinit {
         timer?.invalidate()
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+extension NotificationSimulatorService: UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              didReceive response: UNNotificationResponse,
+                              withCompletionHandler completionHandler: @escaping () -> Void) {
+        // When user taps on notification
+        completionHandler()
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              willPresent notification: UNNotification,
+                              withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // When app is in foreground
+        completionHandler([.banner, .sound, .badge])
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              openSettingsFor notification: UNNotification?) {
+        // When user opens notification settings
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              didRemoveAllPendingNotificationRequests: Bool) {
+        // When all pending notifications are removed
+        resetBadgeCount()
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              didRemovePendingNotificationRequestsWithIdentifiers identifiers: [String]) {
+        // When specific notifications are removed
+        // Check if all notifications are removed
+        center.getPendingNotificationRequests { requests in
+            if requests.isEmpty {
+                DispatchQueue.main.async {
+                    self.resetBadgeCount()
+                }
+            }
+        }
     }
 } 
