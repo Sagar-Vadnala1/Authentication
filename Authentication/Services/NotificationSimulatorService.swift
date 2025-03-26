@@ -5,6 +5,7 @@ import UserNotifications
 class NotificationSimulatorService: ObservableObject {
     private var timer: Timer?
     @Published var isSimulatorRunning = false
+    private var notificationCount = 0
     
     init() {
         startSendingNotifications()
@@ -16,17 +17,18 @@ class NotificationSimulatorService: ObservableObject {
         sendNotification()
         
         // Then start the timer for subsequent notifications
-        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: true) { [weak self] _ in
             self?.sendNotification()
         }
     }
     
     private func sendNotification() {
+        notificationCount += 1
         let content = UNMutableNotificationContent()
         content.title = "New Update"
         content.body = "This is a test notification sent at \(Date().formatted())"
         content.sound = .default
-        content.badge = 1
+        content.badge = (notificationCount) as NSNumber
         
         // Add a trigger to show the notification immediately
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -41,9 +43,14 @@ class NotificationSimulatorService: ObservableObject {
             if let error = error {
                 print("Error sending notification: \(error)")
             } else {
-                print("Notification sent successfully")
+                print("Notification sent successfully with badge count: \(self.notificationCount)")
             }
         }
+    }
+    
+    func resetBadgeCount() {
+        notificationCount = 0
+        UNUserNotificationCenter.current().setBadgeCount(0)
     }
     
     deinit {

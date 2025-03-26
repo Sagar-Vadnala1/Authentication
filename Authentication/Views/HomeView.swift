@@ -42,6 +42,9 @@ struct HomeView: View {
             }
             .navigationBarTitle("Home", displayMode: .inline)
             .onAppear {
+                // Reset badge count when app is opened
+                notificationService.resetBadgeCount()
+                
                 // Request notification permission when home view appears
                 UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
                     if granted {
