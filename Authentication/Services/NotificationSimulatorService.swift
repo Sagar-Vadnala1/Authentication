@@ -3,40 +3,49 @@ import SwiftUI
 import UserNotifications
 
 class NotificationSimulatorService: NSObject, ObservableObject {
-    private var timer: Timer?
-    @Published var isSimulatorRunning = false
-    private var notificationCount = 0
+    @Published var notificationCount = 0
     
     override init() {
         super.init()
-        startSendingNotifications()
-        setupNotificationCenterDelegate()
+        setupNotificationCategories()
     }
     
-    private func setupNotificationCenterDelegate() {
-        UNUserNotificationCenter.current().delegate = self
-    }
-    
-    private func startSendingNotifications() {
-//        isSimulatorRunning = true
-//        // Send first notification immediately
-        sendNotification()
+    private func setupNotificationCategories() {
+        // Define notification categories and actions
+        let viewAction = UNNotificationAction(
+            identifier: "VIEW_ACTION",
+            title: "View",
+            options: .foreground
+        )
         
-        // Then start the timer for subsequent notifications
-        timer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: true) { [weak self] _ in
-            self?.sendNotification()
-        }
+        let dismissAction = UNNotificationAction(
+            identifier: "DISMISS_ACTION",
+            title: "Dismiss",
+            options: .destructive
+        )
+        
+        let category = UNNotificationCategory(
+            identifier: "GENERAL",
+            actions: [viewAction, dismissAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        
+        UNUserNotificationCenter.current().setNotificationCategories([category])
     }
     
-    private func sendNotification() {
-        notificationCount += 1
+    func sendNotification(title: String = "New Update", body: String) {
         let content = UNMutableNotificationContent()
-        content.title = "New Update"
-        content.body = "This is a test notification sent at \(Date().formatted())"
+        content.title = title
+        content.body = body
         content.sound = .default
-        content.badge = NSNumber(value: notificationCount)
+        content.badge = NSNumber(value: notificationCount + 1)
+        content.categoryIdentifier = "GENERAL"
         
-        // Add a trigger to show the notification immediately
+        // Add user info for handling notification tap
+        content.userInfo = ["timestamp": Date().timeIntervalSince1970]
+        
+        // Create trigger for immediate delivery
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         
         let request = UNNotificationRequest(
@@ -45,11 +54,13 @@ class NotificationSimulatorService: NSObject, ObservableObject {
             trigger: trigger
         )
         
-        UNUserNotificationCenter.current().add(request) { error in
+        UNUserNotificationCenter.current().add(request) { [weak self] error in
             if let error = error {
                 print("Error sending notification: \(error)")
             } else {
-                print("Notification sent successfully with badge count: \(self.notificationCount)")
+                DispatchQueue.main.async {
+                    self?.notificationCount += 1
+                }
             }
         }
     }
@@ -58,10 +69,6 @@ class NotificationSimulatorService: NSObject, ObservableObject {
         notificationCount = 0
         UNUserNotificationCenter.current().setBadgeCount(0)
     }
-    
-    deinit {
-        timer?.invalidate()
-    }
 }
 
 // MARK: - UNUserNotificationCenterDelegate
@@ -69,14 +76,24 @@ extension NotificationSimulatorService: UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                               didReceive response: UNNotificationResponse,
                               withCompletionHandler completionHandler: @escaping () -> Void) {
-        // When user taps on notification
+        // Handle notification actions
+        switch response.actionIdentifier {
+        case "VIEW_ACTION":
+            // Handle view action
+            print("View action tapped")
+        case "DISMISS_ACTION":
+            // Handle dismiss action
+            print("Dismiss action tapped")
+        default:
+            // Handle default tap
+            print("Notification tapped")
+        }
         completionHandler()
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                               willPresent notification: UNNotification,
                               withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // When app is in foreground
         completionHandler([.banner, .sound, .badge])
     }
     
