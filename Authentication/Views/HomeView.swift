@@ -4,7 +4,6 @@ struct HomeView: View {
     @Binding var isAuthenticated: Bool
     @StateObject private var viewModel = HomeViewModel()
     @ObservedObject var loginViewModel: LoginViewModel
-    @StateObject private var notificationService = NotificationSimulatorService()
     @EnvironmentObject private var inAppNotificationService: InAppNotificationService
     
     var body: some View {
@@ -99,9 +98,6 @@ struct HomeView: View {
                 .padding(.bottom, 20)
             }
             .navigationBarTitle("Home", displayMode: .inline)
-            .onAppear {
-                notificationService.resetBadgeCount()
-            }
         }
     }
 }
