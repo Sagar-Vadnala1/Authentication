@@ -10,9 +10,12 @@ import SwiftUI
 @main
 struct AuthenticationApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     var body: some Scene {
         WindowGroup {
-            LoginView()
+            NotificationWrapper {
+                LoginView()
+            }
         }
     }
 }

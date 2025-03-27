@@ -16,7 +16,7 @@ struct LoginView: View {
                         ScrollView {
                             VStack(spacing: 20) {
                                 // Company Logo
-                                Image("CompanyLogo")
+                                Image(.companyLogo)
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 120, height: 120)
